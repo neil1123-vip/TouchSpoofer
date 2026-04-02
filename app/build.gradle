@@ -1,9 +1,6 @@
-plugins {
-    id 'com.android.application'
-}
+apply plugin: 'com.android.application'
 
 android {
-    namespace 'com.damai.touchspoofer'
     compileSdk 33
 
     defaultConfig {
@@ -25,6 +22,8 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+    namespace 'com.damai.touchspoofer'
 }
 
 dependencies {
