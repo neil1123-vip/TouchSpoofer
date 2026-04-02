@@ -2,6 +2,9 @@ package com.damai.touchspoofer;
 
 import android.view.MotionEvent;
 import android.view.InputDevice;
+import android.widget.Toast;
+import android.os.Handler;
+import android.os.Looper;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
@@ -24,8 +27,9 @@ public class MainHook implements IXposedHookLoadPackage {
         }
 
         log("开始Hook大麦APP");
+        showToast(lpparam, "TouchSpoofer模块已加载");
 
-        // 方案1: 尝试Hook MotionEvent (可能失败)
+        // Hook MotionEvent
         hookMotionEvent(lpparam);
 
         log("Hook初始化完成");
@@ -33,27 +37,24 @@ public class MainHook implements IXposedHookLoadPackage {
 
     private void hookMotionEvent(XC_LoadPackage.LoadPackageParam lpparam) {
         try {
-            // 使用反射方式Hook，更安全
-            Class<?> motionEventClass = MotionEvent.class;
-
             XposedHelpers.findAndHookMethod(
-                motionEventClass,
+                MotionEvent.class,
                 "getSource",
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                         try {
-                            // SOURCE_TOUCHSCREEN = 0x00001000 = 4096
                             param.setResult(0x00001000);
                         } catch (Throwable t) {
-                            // 忽略错误，保持原值
                         }
                     }
                 }
             );
             log("Hook getSource() 成功");
+            showToast(lpparam, "Hook getSource() 成功");
         } catch (Throwable t) {
             log("Hook getSource() 失败: " + t.getMessage());
+            showToast(lpparam, "Hook getSource() 失败: " + t.getMessage());
         }
 
         try {
@@ -65,17 +66,40 @@ public class MainHook implements IXposedHookLoadPackage {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                         try {
-                            // TOOL_TYPE_FINGER = 1
                             param.setResult(1);
                         } catch (Throwable t) {
-                            // 忽略错误
                         }
                     }
                 }
             );
             log("Hook getToolType() 成功");
+            showToast(lpparam, "Hook getToolType() 成功");
         } catch (Throwable t) {
             log("Hook getToolType() 失败: " + t.getMessage());
+            showToast(lpparam, "Hook getToolType() 失败: " + t.getMessage());
+        }
+    }
+
+    private void showToast(final XC_LoadPackage.LoadPackageParam lpparam, final String msg) {
+        try {
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Toast.makeText(
+                            (android.content.Context) lpparam.classLoader.loadClass("android.app.ActivityThread")
+                                .getMethod("currentApplication")
+                                .invoke(null),
+                            "TouchSpoofer: " + msg,
+                            Toast.LENGTH_SHORT
+                        ).show();
+                    } catch (Throwable t) {
+                        log("Toast失败: " + t.getMessage());
+                    }
+                }
+            });
+        } catch (Throwable t) {
+            log("showToast失败: " + t.getMessage());
         }
     }
 
@@ -83,7 +107,6 @@ public class MainHook implements IXposedHookLoadPackage {
         try {
             XposedBridge.log(TAG + ": " + msg);
         } catch (Throwable t) {
-            // 忽略
         }
     }
 }
