@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Xposed模块作用范围 -->
+    <string-array name="xposed_scope">
+        <item>cn.damai</item>
+    </string-array>
+</resources>
